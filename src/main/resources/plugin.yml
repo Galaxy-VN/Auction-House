@@ -1,0 +1,27 @@
+name: AuctionHouse
+version: maven-version-number
+api-version: 1.16
+main: ca.tweetzy.auctionhouse.AuctionHouse
+description: idfk... sell stuff in a gui
+authors: [Kiran Hart]
+depend: [Vault]
+
+commands:
+  auctionhouse:
+    description: Main command for the auction house plugin
+    aliases: [ah, auctions, auctionhouses]
+    default: true
+    usage: /ah
+
+permissions:
+  auctionhouse.*:
+    description: Allows access to all sub permissions
+    children:
+      auctionhouse.cmd: true
+      auctionhouse.cmd.sell: true
+  auctionhouse.cmd:
+    description: Allows the user to use /ah
+    default: op
+  auctionhouse.cmd.sell:
+    description: Allows the user to sell items in the auction house
+    default: op
