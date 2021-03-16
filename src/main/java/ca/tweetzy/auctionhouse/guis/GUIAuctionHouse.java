@@ -9,6 +9,7 @@ import ca.tweetzy.auctionhouse.settings.Settings;
 import ca.tweetzy.core.gui.Gui;
 import ca.tweetzy.core.utils.TextUtils;
 import ca.tweetzy.core.utils.items.TItemBuilder;
+import org.bukkit.Bukkit;
 
 import java.util.Comparator;
 import java.util.HashMap;
@@ -27,19 +28,26 @@ public class GUIAuctionHouse extends Gui {
     final AuctionPlayer auctionPlayer;
     final List<AuctionItem> items;
 
+    private int taskId;
+
     public GUIAuctionHouse(AuctionPlayer auctionPlayer) {
         this.auctionPlayer = auctionPlayer;
-        this.auctionPlayer.setViewingAuctionHouse(true);
         this.items = AuctionHouse.getInstance().getAuctionItemManager().getAuctionItems().stream().filter(item -> !item.isExpired()).collect(Collectors.toList());
         setTitle(TextUtils.formatText(Settings.GUI_AUCTION_HOUSE_TITLE.getString()));
         setRows(6);
         setAcceptsItems(false);
         draw();
 
-        setOnClose(e -> this.auctionPlayer.setViewingAuctionHouse(false));
+        setOnOpen(e -> {
+            taskId = Bukkit.getServer().getScheduler().scheduleSyncRepeatingTask(AuctionHouse.getInstance(), this::draw, 0L, Settings.TICK_UPDATE_TIME.getInt());
+        });
+
+        setOnClose(e -> {
+            Bukkit.getServer().getScheduler().cancelTask(taskId);
+        });
     }
 
-    private void draw() {
+    public void draw() {
         reset();
 
         // Pagination
@@ -56,7 +64,7 @@ public class GUIAuctionHouse extends Gui {
 
         setButton(5, 1, ConfigurationItemHelper.createConfigurationItem(Settings.GUI_AUCTION_HOUSE_ITEMS_COLLECTION_BIN_ITEM.getString(), Settings.GUI_AUCTION_HOUSE_ITEMS_COLLECTION_BIN_NAME.getString(), Settings.GUI_AUCTION_HOUSE_ITEMS_COLLECTION_BIN_LORE.getStringList(), new HashMap<String, Object>(){{
             put("%expired_player_auctions%", auctionPlayer.getItems(true).size());
-        }}), e -> e.manager.closeAll());
+        }}), e -> e.manager.showGUI(e.player, new GUIExpiredItems(this.auctionPlayer)));
 
         setButton(5, 6, ConfigurationItemHelper.createConfigurationItem(Settings.GUI_AUCTION_HOUSE_ITEMS_TRANSACTIONS_ITEM.getString(), Settings.GUI_AUCTION_HOUSE_ITEMS_TRANSACTIONS_NAME.getString(), Settings.GUI_AUCTION_HOUSE_ITEMS_TRANSACTIONS_LORE.getStringList(), null), null);
         setButton(5, 7, ConfigurationItemHelper.createConfigurationItem(Settings.GUI_AUCTION_HOUSE_ITEMS_HOW_TO_SELL_ITEM.getString(), Settings.GUI_AUCTION_HOUSE_ITEMS_HOW_TO_SELL_NAME.getString(), Settings.GUI_AUCTION_HOUSE_ITEMS_HOW_TO_SELL_LORE.getStringList(), null), null);
