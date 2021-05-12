@@ -17,7 +17,7 @@ import java.util.Arrays;
  * Time Created: 12:28 p.m.
  * Usage of any code found within this class is prohibited unless given explicit permission otherwise
  */
-public class GUIShulkerInspect extends Gui {
+public class GUIContainerInspect extends Gui {
 
     final int[] fillSlots = {0, 1, 2, 3, 4, 5, 6, 7, 8, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 46, 47, 48, 50, 51, 52, 53};
     final ItemStack shulker;
@@ -27,7 +27,7 @@ public class GUIShulkerInspect extends Gui {
      *
      * @param shulker is the shulker box
      */
-    public GUIShulkerInspect(ItemStack shulker) {
+    public GUIContainerInspect(ItemStack shulker) {
         this.shulker = shulker;
         setTitle(TextUtils.formatText(Settings.GUI_SHULKER_INSPECT_TITLE.getString()));
         setDefaultItem(Settings.GUI_SHULKER_INSPECT_BG_ITEM.getMaterial().parseItem());

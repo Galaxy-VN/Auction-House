@@ -65,8 +65,6 @@ public class TickAuctionsTask extends BukkitRunnable {
                             AuctionHouse.getInstance().getServer().getPluginManager().callEvent(auctionEndEvent);
 
                             if (!auctionEndEvent.isCancelled()) {
-                                // since they're online, try to add the item to their inventory
-                                PlayerUtils.giveItem(offlinePlayer.getPlayer(), AuctionAPI.getInstance().deserializeItem(item.getRawItem()));
                                 // withdraw money and give to the owner
                                 AuctionHouse.getInstance().getEconomy().withdrawPlayer(offlinePlayer, item.getCurrentPrice());
                                 AuctionHouse.getInstance().getEconomy().depositPlayer(Bukkit.getOfflinePlayer(item.getOwner()), item.getCurrentPrice());
@@ -74,20 +72,33 @@ public class TickAuctionsTask extends BukkitRunnable {
                                 AuctionHouse.getInstance().getLocale().getMessage("auction.bidwon")
                                         .processPlaceholder("item", WordUtils.capitalizeFully(AuctionAPI.getInstance().deserializeItem(item.getRawItem()).getType().name().replace("_", " ")))
                                         .processPlaceholder("amount", AuctionAPI.getInstance().deserializeItem(item.getRawItem()).getAmount())
-                                        .processPlaceholder("price", String.format("%,.2f", item.getCurrentPrice()))
+                                        .processPlaceholder("price", AuctionAPI.getInstance().formatNumber(item.getCurrentPrice()))
                                         .sendPrefixedMessage(offlinePlayer.getPlayer());
-                                AuctionHouse.getInstance().getLocale().getMessage("pricing.moneyremove").processPlaceholder("price", String.format("%,.2f", item.getCurrentPrice())).sendPrefixedMessage(offlinePlayer.getPlayer());
+                                AuctionHouse.getInstance().getLocale().getMessage("pricing.moneyremove").processPlaceholder("price", AuctionAPI.getInstance().formatNumber(item.getCurrentPrice())).sendPrefixedMessage(offlinePlayer.getPlayer());
                                 // if the original owner is online, let them know they sold an item
                                 if (Bukkit.getOfflinePlayer(item.getOwner()).isOnline()) {
                                     AuctionHouse.getInstance().getLocale().getMessage("auction.itemsold")
                                             .processPlaceholder("item", WordUtils.capitalizeFully(AuctionAPI.getInstance().deserializeItem(item.getRawItem()).getType().name().replace("_", " ")))
-                                            .processPlaceholder("price", String.format("%,.2f", item.getCurrentPrice()))
+                                            .processPlaceholder("price", AuctionAPI.getInstance().formatNumber(item.getCurrentPrice()))
                                             .processPlaceholder("buyer_name", Bukkit.getOfflinePlayer(item.getHighestBidder()).getPlayer().getName())
                                             .sendPrefixedMessage(Bukkit.getOfflinePlayer(item.getOwner()).getPlayer());
-                                    AuctionHouse.getInstance().getLocale().getMessage("pricing.moneyadd").processPlaceholder("price", String.format("%,.2f", item.getCurrentPrice())).sendPrefixedMessage(Bukkit.getOfflinePlayer(item.getOwner()).getPlayer());
+                                    AuctionHouse.getInstance().getLocale().getMessage("pricing.moneyadd").processPlaceholder("price", AuctionAPI.getInstance().formatNumber(item.getCurrentPrice())).sendPrefixedMessage(Bukkit.getOfflinePlayer(item.getOwner()).getPlayer());
                                 }
 
-                                AuctionHouse.getInstance().getAuctionItemManager().removeItem(item.getKey());
+                                // since they're online, try to add the item to their inventory
+                                // TODO CLEAN THIS UP A BIT
+                                if (Settings.ALLOW_PURCHASE_IF_INVENTORY_FULL.getBoolean()) {
+                                    PlayerUtils.giveItem(offlinePlayer.getPlayer(), AuctionAPI.getInstance().deserializeItem(item.getRawItem()));
+                                    AuctionHouse.getInstance().getAuctionItemManager().removeItem(item.getKey());
+                                } else {
+                                    if (offlinePlayer.getPlayer().getInventory().firstEmpty() == -1) {
+                                        item.setOwner(offlinePlayer.getUniqueId());
+                                        item.setExpired(true);
+                                    } else {
+                                        PlayerUtils.giveItem(offlinePlayer.getPlayer(), AuctionAPI.getInstance().deserializeItem(item.getRawItem()));
+                                        AuctionHouse.getInstance().getAuctionItemManager().removeItem(item.getKey());
+                                    }
+                                }
                             }
 
                         } else {
@@ -108,10 +119,10 @@ public class TickAuctionsTask extends BukkitRunnable {
                                 if (Bukkit.getOfflinePlayer(item.getOwner()).isOnline()) {
                                     AuctionHouse.getInstance().getLocale().getMessage("auction.itemsold")
                                             .processPlaceholder("item", WordUtils.capitalizeFully(AuctionAPI.getInstance().deserializeItem(item.getRawItem()).getType().name().replace("_", " ")))
-                                            .processPlaceholder("price", String.format("%,.2f", item.getCurrentPrice()))
+                                            .processPlaceholder("price", AuctionAPI.getInstance().formatNumber(item.getCurrentPrice()))
                                             .processPlaceholder("buyer_name", Bukkit.getOfflinePlayer(item.getHighestBidder()).getPlayer().getName())
                                             .sendPrefixedMessage(Bukkit.getOfflinePlayer(item.getOwner()).getPlayer());
-                                    AuctionHouse.getInstance().getLocale().getMessage("pricing.moneyadd").processPlaceholder("price", String.format("%,.2f", item.getCurrentPrice())).sendPrefixedMessage(Bukkit.getOfflinePlayer(item.getOwner()).getPlayer());
+                                    AuctionHouse.getInstance().getLocale().getMessage("pricing.moneyadd").processPlaceholder("price", AuctionAPI.getInstance().formatNumber(item.getCurrentPrice())).sendPrefixedMessage(Bukkit.getOfflinePlayer(item.getOwner()).getPlayer());
                                 }
 
                                 item.setOwner(offlinePlayer.getUniqueId());

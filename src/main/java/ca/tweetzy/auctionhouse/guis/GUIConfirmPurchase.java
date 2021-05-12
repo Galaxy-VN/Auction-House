@@ -89,6 +89,11 @@ public class GUIConfirmPurchase extends Gui {
 
                 if (auctionEndEvent.isCancelled()) return;
 
+                if (!Settings.ALLOW_PURCHASE_IF_INVENTORY_FULL.getBoolean() && e.player.getInventory().firstEmpty() == -1) {
+                    AuctionHouse.getInstance().getLocale().getMessage("general.noroom").sendPrefixedMessage(e.player);
+                    return;
+                }
+
                 if (this.buyingSpecificQuantity) {
                     ItemStack item = AuctionAPI.getInstance().deserializeItem(located.getRawItem());
 //                    Bukkit.broadcastMessage(String.format("Total Item Qty: %d\nTotal Purchase Qty: %d\nAmount of purchase: %d", item.getAmount(), this.purchaseQuantity, item.getAmount() - this.purchaseQuantity));
@@ -143,14 +148,14 @@ public class GUIConfirmPurchase extends Gui {
     }
 
     private void sendMessages(GuiClickEvent e, AuctionItem located, boolean overwritePrice, double price) {
-        AuctionHouse.getInstance().getLocale().getMessage("pricing.moneyremove").processPlaceholder("price", String.format("%,.2f", overwritePrice ? price : located.getBasePrice())).sendPrefixedMessage(e.player);
+        AuctionHouse.getInstance().getLocale().getMessage("pricing.moneyremove").processPlaceholder("price", AuctionAPI.getInstance().formatNumber(overwritePrice ? price : located.getBasePrice())).sendPrefixedMessage(e.player);
         if (Bukkit.getOfflinePlayer(located.getOwner()).isOnline()) {
             AuctionHouse.getInstance().getLocale().getMessage("auction.itemsold")
                     .processPlaceholder("item", WordUtils.capitalizeFully(AuctionAPI.getInstance().deserializeItem(located.getRawItem()).getType().name().replace("_", " ")))
-                    .processPlaceholder("price", String.format("%,.2f", overwritePrice ? price : located.getBasePrice()))
+                    .processPlaceholder("price", AuctionAPI.getInstance().formatNumber(overwritePrice ? price : located.getBasePrice()))
                     .processPlaceholder("buyer_name", e.player.getName())
                     .sendPrefixedMessage(Bukkit.getOfflinePlayer(located.getOwner()).getPlayer());
-            AuctionHouse.getInstance().getLocale().getMessage("pricing.moneyadd").processPlaceholder("price", String.format("%,.2f", overwritePrice ? price : located.getBasePrice())).sendPrefixedMessage(Bukkit.getOfflinePlayer(located.getOwner()).getPlayer());
+            AuctionHouse.getInstance().getLocale().getMessage("pricing.moneyadd").processPlaceholder("price", AuctionAPI.getInstance().formatNumber(overwritePrice ? price : located.getBasePrice())).sendPrefixedMessage(Bukkit.getOfflinePlayer(located.getOwner()).getPlayer());
         }
     }
 
@@ -173,10 +178,10 @@ public class GUIConfirmPurchase extends Gui {
     private ItemStack getPurchaseInfoItem(int qty) {
         ItemStack stack = ConfigurationItemHelper.createConfigurationItem(Settings.GUI_CONFIRM_QTY_INFO_ITEM.getString(), Settings.GUI_CONFIRM_QTY_INFO_NAME.getString(), Settings.GUI_CONFIRM_QTY_INFO_LORE.getStringList(), new HashMap<String, Object>() {{
             put("%original_stack_size%", maxStackSize);
-            put("%original_stack_price%", String.format("%,.2f", auctionItem.getBasePrice()));
-            put("%price_per_item%", String.format("%,.2f", pricePerItem));
+            put("%original_stack_price%", AuctionAPI.getInstance().formatNumber(auctionItem.getBasePrice()));
+            put("%price_per_item%", AuctionAPI.getInstance().formatNumber(pricePerItem));
             put("%purchase_quantity%", purchaseQuantity);
-            put("%purchase_price%", String.format("%,.2f", pricePerItem * purchaseQuantity));
+            put("%purchase_price%", AuctionAPI.getInstance().formatNumber(pricePerItem * purchaseQuantity));
         }});
         stack.setAmount(qty);
         return stack;

@@ -39,20 +39,24 @@ public class Settings {
     public static final ConfigSetting TICK_UPDATE_TIME = new ConfigSetting(config, "auction setting.tick auctions every", 1, "How many seconds should pass before the plugin updates all the times on items?");
     public static final ConfigSetting TICK_UPDATE_GUI_TIME = new ConfigSetting(config, "auction setting.refresh gui every", 10, "How many seconds should pass before the auction gui auto refreshes?");
     public static final ConfigSetting REFRESH_GUI_WHEN_BID = new ConfigSetting(config, "auction setting.refresh gui when bid", true, "Should the auction gui be re-opened (not redrawn) when a user places a bid, so they get the latest items?");
-    public static final ConfigSetting REFRESH_GUI_ON_FILTER_CHANGE = new ConfigSetting(config, "auction setting.refresh gui when filter changed", false, "Should the gui refresh when the player changes the filter mode?");
     public static final ConfigSetting RECORD_TRANSACTIONS = new ConfigSetting(config, "auction setting.record transactions", true, "Should every transaction be recorded (everything an auction is won or an item is bought)");
     public static final ConfigSetting BROADCAST_AUCTION_LIST = new ConfigSetting(config, "auction setting.broadcast auction list", false, "Should the entire server be alerted when a player lists an item?");
     public static final ConfigSetting PLAYER_NEEDS_TOTAL_PRICE_TO_BID = new ConfigSetting(config, "auction setting.bidder must have funds in account", false, "Should the player who is placing a bid on an item have the money in their account to cover the cost?");
-    public static final ConfigSetting USE_ASYNC_GUI_REFRESH = new ConfigSetting(config, "auction setting.use async gui refresh", false, "Should the gui refresh be done using asynchronous tasks?", "This may reduce lag that can be caused, but", "items may have a flickering effect inside the gui.");
+    public static final ConfigSetting USE_ASYNC_GUI_REFRESH = new ConfigSetting(config, "auction setting.use async gui refresh", true, "Should the gui refresh be done using asynchronous tasks?", "This may reduce lag that can be caused, but", "items may have a flickering effect inside the gui.");
     public static final ConfigSetting SEND_REMOVED_ITEM_BACK_TO_PLAYER = new ConfigSetting(config, "auction setting.send removed item back to player", true, "Should items removed by staff from the auction house be sent back to the player?");
     public static final ConfigSetting ALLOW_USAGE_OF_BID_SYSTEM = new ConfigSetting(config, "auction setting.allow bid system usage", true, "Should players be allowed to use the bid option cmd params?");
     public static final ConfigSetting ALLOW_USAGE_OF_BUY_NOW_SYSTEM = new ConfigSetting(config, "auction setting.allow buy now system usage", true, "Should players be allowed to use the right-click buy now feature on biddable items?");
     public static final ConfigSetting AUTO_SAVE_ENABLED = new ConfigSetting(config, "auction setting.auto save.enabled", true, "Should the auto save task be enabled?");
     public static final ConfigSetting AUTO_SAVE_EVERY = new ConfigSetting(config, "auction setting.auto save.time", 900, "How often should the auto save active? (in seconds. Ex. 900 = 15min)");
-    public static final ConfigSetting FILL_ITEMS_USING_ASYNC = new ConfigSetting(config, "auction setting.fill auction items using async", true, "Should auction items be loaded into the gui asynchronously");
     public static final ConfigSetting ALLOW_PURCHASE_OF_SPECIFIC_QUANTITIES = new ConfigSetting(config, "auction setting.allow purchase of specific quantities", false, "When a buy now item is right-clicked should it open a", "special gui to specify the quantity of items to buy from the stack?");
     public static final ConfigSetting USE_REFRESH_COOL_DOWN = new ConfigSetting(config, "auction setting.use refresh cool down", true, "Should the refresh cooldown be enabled?");
     public static final ConfigSetting REFRESH_COOL_DOWN = new ConfigSetting(config, "auction setting.refresh cool down", 2, "How many seconds should pass before the player can refresh the auction house again?");
+    public static final ConfigSetting ALLOW_PURCHASE_IF_INVENTORY_FULL = new ConfigSetting(config, "auction setting.allow purchase with full inventory", true, "Should auction house allow players to buy items even if their", "inventory is full, if true, items will be dropped on the floor if there is no room.");
+
+    public static final ConfigSetting ASK_FOR_BID_CONFIRMATION = new ConfigSetting(config, "auction setting.ask for bid confirmation", true, "Should Auction House open the confirmation menu for the user to confirm", "whether they actually meant to place a bid or not?");
+    public static final ConfigSetting BASE_PRICE_MUST_BE_HIGHER_THAN_BID_START = new ConfigSetting(config, "auction setting.base price must be higher than bid start", true, "Should the base price (buy now price) be higher than the initial bid starting price?");
+    public static final ConfigSetting SYNC_BASE_PRICE_TO_HIGHEST_PRICE = new ConfigSetting(config, "auction setting.sync the base price to the current price", true, "Ex. If the buy now price was 100, and the current price exceeds 100 to say 200, the buy now price will become 200.");
+    public static final ConfigSetting USE_ALTERNATE_CURRENCY_FORMAT = new ConfigSetting(config, "auction setting.use alternate currency format", false, "If true, $123,456.78 will become $123.456,78");
 
     /*  ===============================
      *         DATABASE OPTIONS
@@ -113,9 +117,21 @@ public class Settings {
     public static final ConfigSetting DISCORD_MSG_FIELD_ITEM_AMOUNT_INLINE = new ConfigSetting(config, "discord.msg.item amount.inline", true);
 
     /*  ===============================
-     *         BLOCKED ITEMS
+     *          BLACK LISTED
      *  ===============================*/
     public static final ConfigSetting BLOCKED_ITEMS = new ConfigSetting(config, "blocked items", Collections.singletonList("ENDER_CHEST"), "Materials that should be blocked (not allowed to sell)");
+    public static final ConfigSetting BLOCKED_ITEM_NAMES = new ConfigSetting(config, "blocked item names", Arrays.asList(
+            "fuck",
+            "bitch",
+            "nigger",
+            "nigga",
+            "pussy"
+    ), "If an item contains any words/names specified here, it won't list.");
+
+    public static final ConfigSetting BLOCKED_ITEM_LORES = new ConfigSetting(config, "blocked item lores", Arrays.asList(
+            "kill yourself",
+            "another random phrase"
+    ), "If an item lore contains any of these values, it won't list");
 
     /*  ===============================
      *         MAX AUCTION TIME
@@ -167,8 +183,11 @@ public class Settings {
 
     public static final ConfigSetting GUI_AUCTION_HOUSE_ITEMS_TRANSACTIONS_ITEM = new ConfigSetting(config, "gui.auction house.items.transactions.item", "PAPER");
     public static final ConfigSetting GUI_AUCTION_HOUSE_ITEMS_TRANSACTIONS_NAME = new ConfigSetting(config, "gui.auction house.items.transactions.name", "&e&lTransactions");
-    public static final ConfigSetting GUI_AUCTION_HOUSE_ITEMS_TRANSACTIONS_LORE = new ConfigSetting(config, "gui.auction house.items.transactions.lore", Collections.singletonList(
-            "&7Click to view transaction history"
+    public static final ConfigSetting GUI_AUCTION_HOUSE_ITEMS_TRANSACTIONS_LORE = new ConfigSetting(config, "gui.auction house.items.transactions.lore", Arrays.asList(
+            "&7Click to view transaction history",
+            "",
+            "&eTotal Items Bought&f: &a%total_items_bought%",
+            "&eTotal Items Sold&f: &a%total_items_sold%"
     ));
 
     public static final ConfigSetting GUI_AUCTION_HOUSE_ITEMS_HOW_TO_SELL_ITEM = new ConfigSetting(config, "gui.auction house.items.how to sell.item", "GOLD_INGOT");
@@ -185,7 +204,8 @@ public class Settings {
             "&7Click here to view all of the items you",
             "&7are currently selling on the auction.",
             "",
-            "&e&l%active_player_auctions% Item(s)"
+            "&e&l%active_player_auctions% Item(s)",
+            "&e&lBalance &a$%player_balance%"
     ));
 
     public static final ConfigSetting GUI_AUCTION_HOUSE_ITEMS_COLLECTION_BIN_ITEM = new ConfigSetting(config, "gui.auction house.items.collection bin.item", "ENDER_CHEST");
@@ -246,6 +266,22 @@ public class Settings {
     ));
 
     /*  ===============================
+     *         CONFIRM BID GUI
+     *  ===============================*/
+    public static final ConfigSetting GUI_CONFIRM_BID_TITLE = new ConfigSetting(config, "gui.confirm bid.title", "&7Are you sure?");
+    public static final ConfigSetting GUI_CONFIRM_BID_NO_ITEM = new ConfigSetting(config, "gui.confirm bid.no.item", "RED_STAINED_GLASS_PANE");
+    public static final ConfigSetting GUI_CONFIRM_BID_NO_NAME = new ConfigSetting(config, "gui.confirm bid.no.name", "&c&LCancel");
+    public static final ConfigSetting GUI_CONFIRM_BID_NO_LORE = new ConfigSetting(config, "gui.confirm bid.no.lore", Collections.singletonList(
+            "&7Click to cancel your bid"
+    ));
+
+    public static final ConfigSetting GUI_CONFIRM_BID_YES_ITEM = new ConfigSetting(config, "gui.confirm bid.yes.item", "LIME_STAINED_GLASS_PANE");
+    public static final ConfigSetting GUI_CONFIRM_BID_YES_NAME = new ConfigSetting(config, "gui.confirm bid.yes.name", "&a&lConfirm");
+    public static final ConfigSetting GUI_CONFIRM_BID_YES_LORE = new ConfigSetting(config, "gui.confirm bid.yes.lore", Collections.singletonList(
+            "&7Click to confirm your bid"
+    ));
+
+    /*  ===============================
      *         ACTIVE AUCTION GUI
      *  ===============================*/
 
@@ -288,6 +324,7 @@ public class Settings {
     public static final ConfigSetting GUI_TRANSACTIONS_ITEM_TRANSACTION_LORE = new ConfigSetting(config, "gui.transactions.items.transaction.lore", Arrays.asList(
             "&7Seller&F: &e%seller%",
             "&7Buyer&F: &e%buyer%",
+            "&7Item name&F: %item_name%",
             "&7Date&F: &e%date%",
             "",
             "&7Click to view more details"
@@ -322,10 +359,11 @@ public class Settings {
     ));
 
     /*  ===============================
-     *         MAIN AUCTION GUI
+     *         INSPECTION GUI
      *  ===============================*/
     public static final ConfigSetting GUI_SHULKER_INSPECT_TITLE = new ConfigSetting(config, "gui.shulker inspect.title", "&7&LInspecting Shulker Box");
     public static final ConfigSetting GUI_SHULKER_INSPECT_BG_ITEM = new ConfigSetting(config, "gui.shulker inspect.bg item", XMaterial.BLACK_STAINED_GLASS_PANE.name());
+
 
     /*  ===============================
      *         AUCTION STACKS
@@ -366,18 +404,20 @@ public class Settings {
             "&eTime Left: &b%remaining_days%&fd &b%remaining_hours%&fh &b%remaining_minutes%&fm &b%remaining_seconds%s"
     ), "This the item stack lore that will be appended to", "auction items in /ah listings (lore will be applied first, then these)");
 
+    public static final ConfigSetting AUCTION_PURCHASE_CONTROL_HEADER = new ConfigSetting(config, "auction items.controls.header", Collections.singletonList("&7-------------------------"));
+    public static final ConfigSetting AUCTION_PURCHASE_CONTROL_FOOTER = new ConfigSetting(config, "auction items.controls.footer", Collections.singletonList("&7-------------------------"));
+
     public static final ConfigSetting AUCTION_PURCHASE_CONTROLS_BID_ON = new ConfigSetting(config, "auction items.controls.using bid", Arrays.asList(
-            "&7-------------------------",
             "&eLeft-Click&f: &bBid",
-            "&eRight-Click&f: &bBuy Now",
-            "&7-------------------------"
+            "&eRight-Click&f: &bBuy Now"
     ), "This will be appended at the end of the lore", "If the auction item is using a bid, this will show");
 
-    public static final ConfigSetting AUCTION_PURCHASE_CONTROLS_BID_OFF = new ConfigSetting(config, "auction items.controls.not using bid", Arrays.asList(
-            "&7-------------------------",
-            "&eLeft-Click&f: &bBuy Now",
-            "&7-------------------------"
+    public static final ConfigSetting AUCTION_PURCHASE_CONTROLS_BID_OFF = new ConfigSetting(config, "auction items.controls.not using bid", Collections.singletonList(
+            "&eLeft-Click&f: &bBuy Now"
     ), "This will be appended at the end of the lore", "If the auction item is not using a bid, this will show");
+
+    public static final ConfigSetting AUCTION_PURCHASE_CONTROLS_INSPECTION = new ConfigSetting(config, "auction items.controls.inspection", Collections.singletonList("&eShift Right-Click to inspect"), "This will only be added to the control lore if the item can be inspected (skulker box)");
+    public static final ConfigSetting AUCTION_PURCHASE_CONTROLS_BUY_NOW_OFF_FOR_BID = new ConfigSetting(config, "auction items.controls.buy now is off for bid", "&cN/A", "If they player sets the buy now price to -1 on a bid item, it will mean make the item", "a bid item, but users will not be able to use the buy now option on the item.");
 
     /*  ===============================
      *         AUCTION STACKS
