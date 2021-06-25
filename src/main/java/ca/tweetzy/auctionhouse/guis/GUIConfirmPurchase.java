@@ -82,6 +82,8 @@ public class GUIConfirmPurchase extends Gui {
         setActionForRange(this.buyingSpecificQuantity ? 9 : 0, this.buyingSpecificQuantity ? 12 : 3, ClickType.LEFT, e -> {
             // Re-select the item to ensure that it's available
             try {
+                // if the item is in the garbage then just don't continue
+                if (AuctionHouse.getInstance().getAuctionItemManager().getGarbageBin().stream().anyMatch(items -> items.getKey().equals(this.auctionItem.getKey()))) return;
                 AuctionItem located = AuctionHouse.getInstance().getAuctionItemManager().getItem(this.auctionItem.getKey());
                 preItemChecks(e, located);
 
@@ -91,7 +93,7 @@ public class GUIConfirmPurchase extends Gui {
                 }
 
                 // Check economy
-                if (!AuctionHouse.getInstance().getEconomy().has(e.player, this.buyingSpecificQuantity ? this.purchaseQuantity * this.pricePerItem : located.getBasePrice())) {
+                if (!AuctionHouse.getInstance().getEconomyManager().has(e.player, this.buyingSpecificQuantity ? this.purchaseQuantity * this.pricePerItem : located.getBasePrice())) {
                     AuctionHouse.getInstance().getLocale().getMessage("general.notenoughmoney").sendPrefixedMessage(e.player);
                     SoundManager.getInstance().playSound(e.player, Settings.SOUNDS_NOT_ENOUGH_MONEY.getString(), 1.0F, 1.0F);
                     e.gui.close();
@@ -118,7 +120,7 @@ public class GUIConfirmPurchase extends Gui {
                         transferFunds(e.player, this.purchaseQuantity * this.pricePerItem);
                     } else {
                         transferFunds(e.player, located.getBasePrice());
-                        AuctionHouse.getInstance().getAuctionItemManager().removeItem(located.getKey());
+                        AuctionHouse.getInstance().getAuctionItemManager().sendToGarbage(located);
                     }
 
                     PlayerUtils.giveItem(e.player, item);
@@ -126,7 +128,7 @@ public class GUIConfirmPurchase extends Gui {
 
                 } else {
                     transferFunds(e.player, located.getBasePrice());
-                    AuctionHouse.getInstance().getAuctionItemManager().removeItem(located.getKey());
+                    AuctionHouse.getInstance().getAuctionItemManager().sendToGarbage(located);
                     PlayerUtils.giveItem(e.player, AuctionAPI.getInstance().deserializeItem(located.getRawItem()));
                     sendMessages(e, located, false, 0);
                 }
@@ -160,8 +162,8 @@ public class GUIConfirmPurchase extends Gui {
     }
 
     private void transferFunds(Player from, double amount) {
-        AuctionHouse.getInstance().getEconomy().withdrawPlayer(from, amount);
-        AuctionHouse.getInstance().getEconomy().depositPlayer(Bukkit.getOfflinePlayer(this.auctionItem.getOwner()), amount);
+        AuctionHouse.getInstance().getEconomyManager().withdrawPlayer(from, amount);
+        AuctionHouse.getInstance().getEconomyManager().depositPlayer(Bukkit.getOfflinePlayer(this.auctionItem.getOwner()), amount);
     }
 
     private void sendMessages(GuiClickEvent e, AuctionItem located, boolean overwritePrice, double price) {

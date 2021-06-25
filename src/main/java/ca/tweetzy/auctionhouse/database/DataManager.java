@@ -1,25 +1,19 @@
 package ca.tweetzy.auctionhouse.database;
 
-import ca.tweetzy.auctionhouse.AuctionHouse;
 import ca.tweetzy.auctionhouse.api.AuctionAPI;
+import ca.tweetzy.auctionhouse.auction.AuctionFilterItem;
 import ca.tweetzy.auctionhouse.auction.AuctionItem;
-import ca.tweetzy.auctionhouse.auction.AuctionItemCategory;
-import ca.tweetzy.auctionhouse.helpers.MaterialCategorizer;
 import ca.tweetzy.auctionhouse.transaction.Transaction;
-import ca.tweetzy.core.compatibility.XMaterial;
-import ca.tweetzy.core.configuration.Config;
 import ca.tweetzy.core.database.DataManagerAbstract;
 import ca.tweetzy.core.database.DatabaseConnector;
-import org.bukkit.Bukkit;
-import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Consumer;
 
 /**
@@ -55,7 +49,7 @@ public class DataManager extends DataManagerAbstract {
                 statement.executeBatch();
             }));
         } else {
-            this.databaseConnector.connect(connection -> {
+            this.sync(() -> this.databaseConnector.connect(connection -> {
                 String saveItems = "INSERT IGNORE INTO " + this.getTablePrefix() + "items SET data = ?";
                 String truncate = "TRUNCATE TABLE " + this.getTablePrefix() + "items";
                 connection.prepareStatement(truncate).executeUpdate();
@@ -69,7 +63,49 @@ public class DataManager extends DataManagerAbstract {
                     }
                 });
                 statement.executeBatch();
-            });
+            }));
+        }
+    }
+
+    public void saveFilterWhitelist(List<AuctionFilterItem> filterItems, boolean async){
+        if (async) {
+            this.async(() -> this.databaseConnector.connect(connection -> {
+                String saveItems = "INSERT IGNORE INTO " + this.getTablePrefix() + "filter_whitelist SET data = ?";
+                String truncate = "TRUNCATE TABLE " + this.getTablePrefix() + "filter_whitelist";
+                try (PreparedStatement statement = connection.prepareStatement(truncate)) {
+                    statement.execute();
+                }
+
+                PreparedStatement statement = connection.prepareStatement(saveItems);
+                filterItems.forEach(filterItem -> {
+                    try {
+                        statement.setString(1, AuctionAPI.getInstance().convertToBase64(filterItem));
+                        statement.addBatch();
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+                });
+                statement.executeBatch();
+            }));
+        } else {
+            this.sync(() -> this.databaseConnector.connect(connection -> {
+                String saveItems = "INSERT IGNORE INTO " + this.getTablePrefix() + "filter_whitelist SET data = ?";
+                String truncate = "TRUNCATE TABLE " + this.getTablePrefix() + "filter_whitelist";
+                try (PreparedStatement statement = connection.prepareStatement(truncate)) {
+                    statement.execute();
+                }
+
+                PreparedStatement statement = connection.prepareStatement(saveItems);
+                filterItems.forEach(filterItem -> {
+                    try {
+                        statement.setString(1, AuctionAPI.getInstance().convertToBase64(filterItem));
+                        statement.addBatch();
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+                });
+                statement.executeBatch();
+            }));
         }
     }
 
@@ -94,7 +130,7 @@ public class DataManager extends DataManagerAbstract {
                 statement.executeBatch();
             }));
         } else {
-            this.databaseConnector.connect(connection -> {
+            this.sync(() -> this.databaseConnector.connect(connection -> {
                 String saveItems = "INSERT IGNORE INTO " + this.getTablePrefix() + "transactions SET data = ?";
                 String truncate = "TRUNCATE TABLE " + this.getTablePrefix() + "transactions";
                 try (PreparedStatement statement = connection.prepareStatement(truncate)) {
@@ -111,7 +147,7 @@ public class DataManager extends DataManagerAbstract {
                     }
                 });
                 statement.executeBatch();
-            });
+            }));
         }
     }
 
@@ -127,6 +163,21 @@ public class DataManager extends DataManagerAbstract {
                 }
             }
             this.sync(() -> callback.accept(transactions));
+        }));
+    }
+
+    public void getFilterWhitelist(Consumer<ArrayList<AuctionFilterItem>> callback) {
+        ArrayList<AuctionFilterItem> filterItems = new ArrayList<>();
+        this.async(() -> this.databaseConnector.connect(connection -> {
+            String select = "SELECT * FROM " + this.getTablePrefix() + "filter_whitelist";
+
+            try (Statement statement = connection.createStatement()) {
+                ResultSet result = statement.executeQuery(select);
+                while (result.next()) {
+                    filterItems.add((AuctionFilterItem) AuctionAPI.getInstance().convertBase64ToObject(result.getString("data")));
+                }
+            }
+            this.sync(() -> callback.accept(filterItems));
         }));
     }
 

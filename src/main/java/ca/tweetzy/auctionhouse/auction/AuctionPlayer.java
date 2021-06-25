@@ -5,7 +5,6 @@ import lombok.Getter;
 import lombok.Setter;
 import org.bukkit.entity.Player;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -22,13 +21,27 @@ public class AuctionPlayer {
 
     private final Player player;
 
+    private AuctionSaleType selectedSaleType;
+    private AuctionItemCategory selectedFilter;
+    private AuctionSortType auctionSortType;
+    private String currentSearchPhrase;
+
     public AuctionPlayer(Player player) {
         this.player = player;
+        resetFilter();
     }
 
     public List<AuctionItem> getItems(boolean getExpired) {
-        return Collections.unmodifiableList(AuctionHouse.getInstance().getAuctionItemManager().getAuctionItems().stream().filter(item -> item.getOwner().equals(this.player.getUniqueId()) && item.isExpired() == getExpired).collect(Collectors.toList()));
+        return AuctionHouse.getInstance().getAuctionItemManager().getAuctionItems().stream().filter(item -> item.getOwner().equals(this.player.getUniqueId()) && !AuctionHouse.getInstance().getAuctionItemManager().getGarbageBin().contains(item) && item.isExpired() == getExpired).collect(Collectors.toList());
     }
+
+    public void resetFilter() {
+        this.selectedFilter = AuctionItemCategory.ALL;
+        this.auctionSortType = AuctionSortType.RECENT;
+        this.selectedSaleType = AuctionSaleType.BOTH;
+        this.currentSearchPhrase = "";
+    }
+
 
     public int getSellLimit() {
         if (player.hasPermission("auctionhouse.maxsell.*")) return Integer.MAX_VALUE;

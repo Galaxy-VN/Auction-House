@@ -3,7 +3,6 @@ package ca.tweetzy.auctionhouse.auction;
 import ca.tweetzy.auctionhouse.api.AuctionAPI;
 import ca.tweetzy.auctionhouse.settings.Settings;
 import ca.tweetzy.core.compatibility.ServerVersion;
-import ca.tweetzy.core.compatibility.XMaterial;
 import ca.tweetzy.core.utils.TextUtils;
 import ca.tweetzy.core.utils.nms.NBTEditor;
 import lombok.Getter;
@@ -74,7 +73,7 @@ public class AuctionItem implements Serializable {
     public ItemStack getDisplayStack(AuctionStackType type) {
         ItemStack itemStack = AuctionAPI.getInstance().deserializeItem(this.rawItem).clone();
         itemStack.setAmount(Math.max(itemStack.getAmount(), 1));
-        ItemMeta meta = itemStack.getItemMeta();
+        ItemMeta meta = itemStack.hasItemMeta() ? itemStack.getItemMeta() : Bukkit.getItemFactory().getItemMeta(itemStack.getType());
         List<String> lore = (meta.hasLore()) ? meta.getLore() : new ArrayList<>();
 
         String theSeller = (this.owner == null) ? "&eSeller Name???" : Bukkit.getOfflinePlayer(this.owner).getName();
@@ -103,7 +102,7 @@ public class AuctionItem implements Serializable {
             lore.addAll(Settings.AUCTION_PURCHASE_CONTROL_HEADER.getStringList().stream().map(TextUtils::formatText).collect(Collectors.toList()));
             lore.addAll(this.bidStartPrice <= 0 || this.bidIncPrice <= 0 ? Settings.AUCTION_PURCHASE_CONTROLS_BID_OFF.getStringList().stream().map(TextUtils::formatText).collect(Collectors.toList()) : Settings.AUCTION_PURCHASE_CONTROLS_BID_ON.getStringList().stream().map(TextUtils::formatText).collect(Collectors.toList()));
 
-            if ((ServerVersion.isServerVersionAtLeast(ServerVersion.V1_11) && itemStack.getType().name().contains("SHULKER_BOX")) || (ServerVersion.isServerVersionAtLeast(ServerVersion.V1_14) && itemStack.getType() == XMaterial.SHULKER_BOX.parseMaterial() || itemStack.getType() == XMaterial.BARREL.parseMaterial())) {
+            if (NBTEditor.contains(itemStack, "AuctionBundleItem") || (ServerVersion.isServerVersionAtLeast(ServerVersion.V1_11) && itemStack.getType().name().contains("SHULKER_BOX"))) {
                 lore.addAll(Settings.AUCTION_PURCHASE_CONTROLS_INSPECTION.getStringList().stream().map(TextUtils::formatText).collect(Collectors.toList()));
             }
 

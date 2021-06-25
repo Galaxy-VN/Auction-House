@@ -3,15 +3,11 @@ package ca.tweetzy.auctionhouse.managers;
 import ca.tweetzy.auctionhouse.AuctionHouse;
 import ca.tweetzy.auctionhouse.api.AuctionAPI;
 import ca.tweetzy.auctionhouse.auction.AuctionItem;
-import ca.tweetzy.auctionhouse.auction.AuctionItemCategory;
-import ca.tweetzy.auctionhouse.helpers.MaterialCategorizer;
 import ca.tweetzy.core.utils.TextUtils;
 import org.bukkit.Bukkit;
+import org.bukkit.OfflinePlayer;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -24,14 +20,21 @@ import java.util.stream.Collectors;
 public class AuctionItemManager {
 
     private final ArrayList<AuctionItem> auctionItems = new ArrayList<>();
+    private final Set<AuctionItem> garbageBin = new HashSet<>();
 
     public void addItem(AuctionItem auctionItem) {
         if (auctionItem == null) return;
         this.auctionItems.add(auctionItem);
     }
 
-    public void removeItem(UUID uuid) {
-        this.auctionItems.removeIf(item -> item.getKey().equals(uuid));
+    public void sendToGarbage(AuctionItem auctionItem) {
+        if (auctionItem == null) return;
+        this.garbageBin.add(auctionItem);
+    }
+
+    public void removeUnknownOwnerItems() {
+        List<UUID> knownOfflinePlayers = Arrays.stream(Bukkit.getOfflinePlayers()).map(OfflinePlayer::getUniqueId).collect(Collectors.toList());
+        this.auctionItems.removeIf(item -> !knownOfflinePlayers.contains(item.getOwner()));
     }
 
     public AuctionItem getItem(UUID uuid) {
@@ -39,7 +42,12 @@ public class AuctionItemManager {
     }
 
     public List<AuctionItem> getAuctionItems() {
-        return Collections.unmodifiableList(this.auctionItems);
+        return this.auctionItems;
+    }
+
+
+    public Set<AuctionItem> getGarbageBin() {
+        return garbageBin;
     }
 
     public void loadItems(boolean useDatabase) {

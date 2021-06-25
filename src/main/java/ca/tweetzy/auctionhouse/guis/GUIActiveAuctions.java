@@ -1,7 +1,6 @@
 package ca.tweetzy.auctionhouse.guis;
 
 import ca.tweetzy.auctionhouse.AuctionHouse;
-import ca.tweetzy.auctionhouse.api.AuctionAPI;
 import ca.tweetzy.auctionhouse.auction.AuctionItem;
 import ca.tweetzy.auctionhouse.auction.AuctionPlayer;
 import ca.tweetzy.auctionhouse.auction.AuctionStackType;
@@ -82,7 +81,7 @@ public class GUIActiveAuctions extends Gui {
                             break;
                         case RIGHT:
                             if (Settings.ALLOW_PLAYERS_TO_ACCEPT_BID.getBoolean() && item.getBidStartPrice() != 0 && !item.getHighestBidder().equals(e.player.getUniqueId())) {
-                                AuctionHouse.newChain().async(() -> AuctionAPI.getInstance().endAuction(item)).sync(this::draw).execute();
+                                item.setRemainingTime(0);
                             }
                             break;
                     }
